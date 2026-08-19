@@ -2,11 +2,17 @@ package uk.gov.cabinetoffice.csl.integration.learning;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import uk.gov.cabinetoffice.csl.domain.learnerrecord.record.LearnerRecordEventQuery;
 import uk.gov.cabinetoffice.csl.integration.IntegrationTestBase;
 import uk.gov.cabinetoffice.csl.util.TestDataService;
 import uk.gov.cabinetoffice.csl.util.data.ArrayJsonContentBuilder;
+import uk.gov.cabinetoffice.csl.util.data.catalogue.JsonCourseBuilder;
+import uk.gov.cabinetoffice.csl.util.data.catalogue.JsonCourseDtoBuilder;
 import uk.gov.cabinetoffice.csl.util.data.catalogue.JsonLearningTagBuilder;
+import uk.gov.cabinetoffice.csl.util.data.learnerRecord.JsonModuleRecordBuilder;
 import uk.gov.cabinetoffice.csl.util.stub.CSLStubService;
+
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -58,6 +64,9 @@ public class LearningCategoriesTest extends IntegrationTestBase {
 
     @Test
     public void testGetSubCategories() throws Exception {
+        cslStubService.getCsrsStubService().getCivilServant("userId", testDataService.generateCivilServant());
+        String response = ArrayJsonContentBuilder.create().getAsPaginatedAndBuild(0, 20, 1);
+        cslStubService.getLearningCatalogue().getCoursesForLearningTag(2L, 0, 20, response);
         cslStubService.getLearningCatalogue().getLearningTags(learningTagsPagedResponse);
         mockMvc.perform(get("/learning/categories/TAGN2"))
                 .andExpect(status().is2xxSuccessful())
@@ -75,10 +84,16 @@ public class LearningCategoriesTest extends IntegrationTestBase {
                             "description": "TagName2 description",
                             "parents": [
                                 {
-                                    "text": "TagName1",
-                                    "link": "TAGN1"
+                                    "link": "TAGN1",
+                                    "text": "TagName1"
                                 }
-                            ]
+                            ],
+                            "courses": {
+                                "results": [],
+                                "page": 0,
+                                "size": 0,
+                                "totalResults": 0
+                            }
                         }
                         """, true));
     }
@@ -86,6 +101,9 @@ public class LearningCategoriesTest extends IntegrationTestBase {
     @Test
     public void testGetSubCategoriesDescendant() throws Exception {
         cslStubService.getLearningCatalogue().getLearningTags(learningTagsPagedResponse);
+        cslStubService.getCsrsStubService().getCivilServant("userId", testDataService.generateCivilServant());
+        String response = ArrayJsonContentBuilder.create().getAsPaginatedAndBuild(0, 20, 1);
+        cslStubService.getLearningCatalogue().getCoursesForLearningTag(3L, 0, 20, response);
         mockMvc.perform(get("/learning/categories/TAGN3"))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(content().json("""
@@ -95,20 +113,29 @@ public class LearningCategoriesTest extends IntegrationTestBase {
                             "description": "TagName3 description",
                             "parents": [
                                 {
-                                    "text": "TagName1",
-                                    "link": "TAGN1"
+                                    "link": "TAGN2",
+                                    "text": "TagName2"
                                 },
                                 {
-                                    "text": "TagName2",
-                                    "link": "TAGN2"
+                                    "link": "TAGN1",
+                                    "text": "TagName1"
                                 }
-                            ]
+                            ],
+                            "courses": {
+                                "results": [],
+                                "page": 0,
+                                "size": 0,
+                                "totalResults": 0
+                            }
                         }
                         """));
     }
 
     @Test
     public void testGetSubCategoriesParent() throws Exception {
+        cslStubService.getCsrsStubService().getCivilServant("userId", testDataService.generateCivilServant());
+        String response = ArrayJsonContentBuilder.create().getAsPaginatedAndBuild(0, 20, 1);
+        cslStubService.getLearningCatalogue().getCoursesForLearningTag(1L, 0, 20, response);
         cslStubService.getLearningCatalogue().getLearningTags(learningTagsPagedResponse);
         mockMvc.perform(get("/learning/categories/TAGN1"))
                 .andExpect(status().is2xxSuccessful())
@@ -135,7 +162,114 @@ public class LearningCategoriesTest extends IntegrationTestBase {
                             ],
                             "title": "TagName1",
                             "description": "TagName1 description",
-                            "parents": []
+                            "parents": [],
+                            "courses": {
+                              "results":[],
+                              "page":0,
+                              "size":0,
+                              "totalResults":0
+                          }
+                        }
+                        """, true));
+    }
+
+    @Test
+    public void testGetSubCategoriesParentWithCourses() throws Exception {
+        cslStubService.getCsrsStubService().getCivilServant("userId", testDataService.generateCivilServant());
+        cslStubService.getLearningCatalogue().getLearningTags(learningTagsPagedResponse);
+        String response = ArrayJsonContentBuilder.create(
+                JsonCourseDtoBuilder.create("course1", "Course 1"),
+                JsonCourseDtoBuilder.create("course2", "Course 2"),
+                JsonCourseDtoBuilder.create("course3", "Course 3")
+        ).getAsPaginatedAndBuild(0, 20, 1);
+        cslStubService.getLearningCatalogue().getCoursesForLearningTag(1L, 0, 20, response);
+
+        String courses = ArrayJsonContentBuilder.create(
+                JsonCourseBuilder.create("course1", "Course 1")
+                        .addLinkModule("module1", "module1", false, 30)
+                        .addDepartmentRequiredLearning("DWP", "2024-01-01T00:00:00Z", "P1Y")
+                        .addDepartmentRequiredLearning("HMRC", "2023-01-01T00:00:00Z", "P1Y"),
+                JsonCourseBuilder.create("course2", "Course 2")
+                        .addLinkModule("module3", "module3", false, 0),
+                JsonCourseBuilder.create("course3", "Course 3")
+                        .addLinkModule("module5", "module5", false, 0)
+                        .addFileModule("module6", "module6", false, 0)).build();
+        cslStubService.getLearningCatalogue().getCourses(List.of("course1", "course2", "course3"), courses);
+        String eventsResponse = """
+                {
+                    "content": [
+                        {
+                            "eventTimestamp": "2022-01-01T00:00:00Z",
+                            "resourceId": "course1"
+                        },
+                        {
+                            "eventTimestamp": "2022-01-01T00:00:00Z",
+                            "resourceId": "course2"
+                        }
+                    ],
+                    "totalPages": 1
+                }
+                """;
+        cslStubService.getLearnerRecord().getLearnerRecordEvents(0, LearnerRecordEventQuery.builder().userId("userId").resourceIds(List.of("course1", "course2", "course3"))
+                .eventTypes(List.of("COMPLETE_COURSE")).build(), eventsResponse);
+
+        String moduleRecordResponse = ArrayJsonContentBuilder.create(
+                JsonModuleRecordBuilder.create("module5", "course3", "userId", "link", "2024-01-01T10:00:00")
+                        .addCompletionDate("2025-01-01T10:00:00", "2025-01-01T10:00:00").addState("IN_PROGRESS")
+        ).getAsObjectList("moduleRecords").toString();
+        cslStubService.getLearnerRecord().getModuleRecords(List.of("userId"), List.of("module5"), moduleRecordResponse);
+
+        mockMvc.perform(get("/learning/categories/TAGN1"))
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(content().json("""
+                        {
+                            "categories": [
+                                {
+                                    "title": "TagName2",
+                                    "description": "TagName2 description",
+                                    "url": "TAGN2",
+                                    "categories": [
+                                        {
+                                            "link": "TAGN3",
+                                            "text": "TagName3"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "title": "TagName5",
+                                    "description": "TagName5 description",
+                                    "url": "TAGN5",
+                                    "categories": []
+                                }
+                            ],
+                            "title": "TagName1",
+                            "description": "TagName1 description",
+                            "parents": [],
+                            "courses": {
+                                "results": [
+                                    {
+                                        "id": "course1",
+                                        "title": "Course 1",
+                                        "shortDescription": "Course 1 short description",
+                                        "status": "NULL"
+                                    },
+                                    {
+                                        "id": "course2",
+                                        "title": "Course 2",
+                                        "shortDescription": "Course 2 short description",
+                                        "status": "COMPLETED"
+                                    },
+                                    {
+                                        "id": "course3",
+                                        "title": "Course 3",
+                                        "shortDescription": "Course 3 short description",
+                                        "status": "IN_PROGRESS"
+                                    }
+                                ],
+                                "page": 0,
+                                "size": 20,
+                                "totalResults": null
+                            }
                         }
                         """, true));
     }

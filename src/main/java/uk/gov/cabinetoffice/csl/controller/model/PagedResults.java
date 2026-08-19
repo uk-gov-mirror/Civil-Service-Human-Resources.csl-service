@@ -24,4 +24,8 @@ public class PagedResults<T> extends Results<T> {
         this.size = size;
         this.totalResults = totalResults;
     }
+
+    public static <R> PagedResults<R> emptyResults() {
+        return new PagedResults<>(List.of(), 0, 0, 0);
+    }
 }

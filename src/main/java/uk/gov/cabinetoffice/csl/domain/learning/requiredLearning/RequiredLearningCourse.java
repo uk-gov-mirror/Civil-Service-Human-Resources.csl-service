@@ -19,7 +19,7 @@ public class RequiredLearningCourse extends LearningPlanCourse {
 
     public RequiredLearningCourse(String id, String title, String shortDescription, String type, Integer duration,
                                   Integer moduleCount, Integer costInPounds, State status, LearningPeriod learningPeriod) {
-        super(id, title, shortDescription, type, duration, moduleCount, costInPounds, status);
+        super(id, title, shortDescription, status, type, duration, moduleCount, costInPounds);
         this.learningPeriod = learningPeriod;
     }
 

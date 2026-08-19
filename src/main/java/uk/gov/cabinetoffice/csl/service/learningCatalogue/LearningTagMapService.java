@@ -8,6 +8,7 @@ import uk.gov.cabinetoffice.csl.client.courseCatalogue.LearningTagMapClient;
 import uk.gov.cabinetoffice.csl.client.model.BulkUpdateResponse;
 import uk.gov.cabinetoffice.csl.controller.learning.model.LearningTagOverview;
 import uk.gov.cabinetoffice.csl.domain.learning.LearningTagTaxonomy;
+import uk.gov.cabinetoffice.csl.domain.learningcatalogue.CourseLearningTagSearchResults;
 import uk.gov.cabinetoffice.csl.domain.learningcatalogue.learningTag.*;
 import uk.gov.cabinetoffice.csl.domain.taxonomy.FormattedTaxonomyItem;
 import uk.gov.cabinetoffice.csl.domain.taxonomy.FormattedTaxonomyItems;
@@ -100,6 +101,10 @@ public class LearningTagMapService extends CachedTaxonomyMapService<LearningTag,
 
     public LearningTagTaxonomy getUnarchivedHomepageTagsWithUrl(String urlSlug) {
         return get().getFullTaxonomyFromUrl(urlSlug);
+    }
+
+    public CourseLearningTagSearchResults getCourses(Long learningTagId, Integer page, Integer size) {
+        return this.client.getCoursesForTag(learningTagId, page, size);
     }
 
 }

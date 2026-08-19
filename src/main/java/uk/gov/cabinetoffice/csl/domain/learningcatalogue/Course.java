@@ -14,6 +14,7 @@ import uk.gov.cabinetoffice.csl.domain.learnerrecord.State;
 import uk.gov.cabinetoffice.csl.domain.learningcatalogue.event.Event;
 import uk.gov.cabinetoffice.csl.util.Cacheable;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -116,6 +117,18 @@ public class Course implements IParentLearningResource<Module>, Cacheable {
         return this.modules.stream()
                 .filter(Module::isRequiredForCompletion)
                 .collect(Collectors.toList());
+    }
+
+    @JsonIgnore
+    public boolean isDateAfterLearningPeriod(User user, LocalDateTime date) {
+        return getLearningPeriodForDepartmentHierarchy(user.getDepartmentCodes())
+                .map(learningPeriod -> date.isAfter(learningPeriod.getStartDateAsDateTime()))
+                .orElse(true);
+    }
+
+    @JsonIgnore
+    public State getStateForUser(User user, LocalDateTime completionDate) {
+        return isDateAfterLearningPeriod(user, completionDate) ? State.COMPLETED : State.NULL;
     }
 
     @JsonIgnore

@@ -50,7 +50,7 @@ public class LearningPlanFactory {
 
     public LearningPlanCourse getLearningPlanCourse(Course course, State state) {
         return new LearningPlanCourse(course.getId(), course.getTitle(),
-                course.getShortDescription(), course.getCourseType(), course.getDurationInSeconds(),
-                course.getModules().size(), course.getCost(), state);
+                course.getShortDescription(), state, course.getCourseType(), course.getDurationInSeconds(),
+                course.getModules().size(), course.getCost());
     }
 }
